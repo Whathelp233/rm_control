@@ -81,25 +81,25 @@ public:
     queue_size_ = getParam(nh, "queue_size", 1);
     pub_ = nh.advertise<MsgType>(topic_, queue_size_);
   }
-  void setMode(int mode)
+  void setMode(int mode)//设置模式（发送命令的模式？）
   {
     if (!std::is_same<MsgType, geometry_msgs::Twist>::value && !std::is_same<MsgType, std_msgs::Float64>::value)
       msg_.mode = mode;
   }
-  virtual void sendCommand(const ros::Time& time)
+  virtual void sendCommand(const ros::Time& time)//虚函数
   {
     pub_.publish(msg_);
   }
-  virtual void updateGameRobotStatus(const rm_msgs::GameRobotStatus data)
+  virtual void updateGameRobotStatus(const rm_msgs::GameRobotStatus data)//更新车的状态
   {
   }
-  virtual void updateGameStatus(const rm_msgs::GameStatus data)
+  virtual void updateGameStatus(const rm_msgs::GameStatus data)//更新游戏状态
   {
   }
-  virtual void updateCapacityData(const rm_msgs::PowerManagementSampleAndStatusData data)
+  virtual void updateCapacityData(const rm_msgs::PowerManagementSampleAndStatusData data)//更新超电数据
   {
   }
-  virtual void updatePowerHeatData(const rm_msgs::PowerHeatData data)
+  virtual void updatePowerHeatData(const rm_msgs::PowerHeatData data)//热量数据
   {
   }
   virtual void setZero() = 0;
@@ -116,7 +116,7 @@ protected:
 };
 
 template <class MsgType>
-class TimeStampCommandSenderBase : public CommandSenderBase<MsgType>//时间戳命令
+class TimeStampCommandSenderBase : public CommandSenderBase<MsgType>//时间戳命令基类
 {
 public:
   explicit TimeStampCommandSenderBase(ros::NodeHandle& nh) : CommandSenderBase<MsgType>(nh)
@@ -149,7 +149,7 @@ public:
   explicit Vel2DCommandSender(ros::NodeHandle& nh) : CommandSenderBase<geometry_msgs::Twist>(nh)
   {
     XmlRpc::XmlRpcValue xml_rpc_value;
-    if (!nh.getParam("max_linear_x", xml_rpc_value))
+    if (!nh.getParam("max_linear_x", xml_rpc_value))//获得最大速度
       ROS_ERROR("Max X linear velocity no defined (namespace: %s)", nh.getNamespace().c_str());
     else
       max_linear_x_.init(xml_rpc_value);
@@ -160,35 +160,35 @@ public:
     if (!nh.getParam("max_angular_z", xml_rpc_value))
       ROS_ERROR("Max Z angular velocity no defined (namespace: %s)", nh.getNamespace().c_str());
     else
-      max_angular_z_.init(xml_rpc_value);
+      max_angular_z_.init(xml_rpc_value);//初始化最大速度
     std::string topic;
-    nh.getParam("power_limit_topic", topic);
+    nh.getParam("power_limit_topic", topic);//功率限制的发布话题
     target_vel_yaw_threshold_ = getParam(nh, "target_vel_yaw_threshold", 3.);
     chassis_power_limit_subscriber_ =
-        nh.subscribe<rm_msgs::ChassisCmd>(topic, 1, &Vel2DCommandSender::chassisCmdCallback, this);
+        nh.subscribe<rm_msgs::ChassisCmd>(topic, 1, &Vel2DCommandSender::chassisCmdCallback, this);//订阅该话题
   }
 
-  void updateTrackData(const rm_msgs::TrackData& data)
+  void updateTrackData(const rm_msgs::TrackData& data)//更新跟踪数据
   {
     track_data_ = data;
   }
-  void setLinearXVel(double scale)
+  void setLinearXVel(double scale)//设置线速度x
   {
     msg_.linear.x = scale * max_linear_x_.output(power_limit_);
   };
-  void setLinearYVel(double scale)
+  void setLinearYVel(double scale)//设置线速度y
   {
     msg_.linear.y = scale * max_linear_y_.output(power_limit_);
   };
-  void setAngularZVel(double scale)
+  void setAngularZVel(double scale)//设置角速度z
   {
-    if (track_data_.v_yaw > target_vel_yaw_threshold_)
+    if (track_data_.v_yaw > target_vel_yaw_threshold_)//过了一半就反过来转
       vel_direction_ = -1.;
     if (track_data_.v_yaw < -target_vel_yaw_threshold_)
       vel_direction_ = 1.;
     msg_.angular.z = scale * max_angular_z_.output(power_limit_) * vel_direction_;
   };
-  void setAngularZVel(double scale, double limit)
+  void setAngularZVel(double scale, double limit)//设置角速度z，但是带有limit
   {
     if (track_data_.v_yaw > target_vel_yaw_threshold_)
       vel_direction_ = -1.;
@@ -197,13 +197,13 @@ public:
     double angular_z = max_angular_z_.output(power_limit_) > limit ? limit : max_angular_z_.output(power_limit_);
     msg_.angular.z = scale * angular_z * vel_direction_;
   };
-  void set2DVel(double scale_x, double scale_y, double scale_z)
+  void set2DVel(double scale_x, double scale_y, double scale_z)//设置速度
   {
     setLinearXVel(scale_x);
     setLinearYVel(scale_y);
     setAngularZVel(scale_z);
   }
-  void setZero() override
+  void setZero() override//调0
   {
     msg_.linear.x = 0.;
     msg_.linear.y = 0.;
@@ -211,7 +211,7 @@ public:
   }
 
 protected:
-  void chassisCmdCallback(const rm_msgs::ChassisCmd::ConstPtr& msg)
+  void chassisCmdCallback(const rm_msgs::ChassisCmd::ConstPtr& msg)//获取从裁判系统获得的功率限制
   {
     power_limit_ = msg->power_limit;
   }
@@ -229,7 +229,7 @@ class ChassisCommandSender : public TimeStampCommandSenderBase<rm_msgs::ChassisC
 public:
   explicit ChassisCommandSender(ros::NodeHandle& nh) : TimeStampCommandSenderBase<rm_msgs::ChassisCmd>(nh)
   {
-    XmlRpc::XmlRpcValue xml_rpc_value;
+    XmlRpc::XmlRpcValue xml_rpc_value;//初始化加速度
     power_limit_ = new PowerLimit(nh);
     if (!nh.getParam("accel_x", xml_rpc_value))
       ROS_ERROR("Accel X no defined (namespace: %s)", nh.getNamespace().c_str());
@@ -245,34 +245,34 @@ public:
       accel_z_.init(xml_rpc_value);
   }
 
-  void updateSafetyPower(int safety_power)
+  void updateSafetyPower(int safety_power)//更新安全功率
   {
     power_limit_->updateSafetyPower(safety_power);
   }
-  void updateGameRobotStatus(const rm_msgs::GameRobotStatus data) override
+  void updateGameRobotStatus(const rm_msgs::GameRobotStatus data) override//更新车的状态
   {
     power_limit_->setGameRobotData(data);
   }
-  void updatePowerHeatData(const rm_msgs::PowerHeatData data) override
+  void updatePowerHeatData(const rm_msgs::PowerHeatData data) override//更新功率热量数据
   {
     power_limit_->setChassisPowerBuffer(data);
   }
-  void updateCapacityData(const rm_msgs::PowerManagementSampleAndStatusData data) override
+  void updateCapacityData(const rm_msgs::PowerManagementSampleAndStatusData data) override//更新超电数据
   {
     power_limit_->setCapacityData(data);
   }
-  void updateRefereeStatus(bool status)
+  void updateRefereeStatus(bool status)//更新裁判系统状态
   {
     power_limit_->setRefereeStatus(status);
   }
-  void setFollowVelDes(double follow_vel_des)
+  void setFollowVelDes(double follow_vel_des)//更新跟随速度
   {
     msg_.follow_vel_des = follow_vel_des;
   }
-  void sendChassisCommand(const ros::Time& time, bool is_gyro)
+  void sendChassisCommand(const ros::Time& time, bool is_gyro)//发布底盘命令
   {
-    power_limit_->setLimitPower(msg_, is_gyro);
-    msg_.accel.linear.x = accel_x_.output(msg_.power_limit);
+    power_limit_->setLimitPower(msg_, is_gyro);//设定功率控制
+    msg_.accel.linear.x = accel_x_.output(msg_.power_limit);//计算功率限制下的最大加速度（应该是？）
     msg_.accel.linear.y = accel_y_.output(msg_.power_limit);
     msg_.accel.angular.z = accel_z_.output(msg_.power_limit);
     TimeStampCommandSenderBase<rm_msgs::ChassisCmd>::sendCommand(time);
@@ -289,17 +289,17 @@ class GimbalCommandSender : public TimeStampCommandSenderBase<rm_msgs::GimbalCmd
 public:
   explicit GimbalCommandSender(ros::NodeHandle& nh) : TimeStampCommandSenderBase<rm_msgs::GimbalCmd>(nh)
   {
-    if (!nh.getParam("max_yaw_vel", max_yaw_vel_))
+    if (!nh.getParam("max_yaw_vel", max_yaw_vel_))//获得云台各个关节的速度极限
       ROS_ERROR("Max yaw velocity no defined (namespace: %s)", nh.getNamespace().c_str());
     if (!nh.getParam("max_pitch_vel", max_pitch_vel_))
       ROS_ERROR("Max pitch velocity no defined (namespace: %s)", nh.getNamespace().c_str());
     if (!nh.getParam("track_timeout", track_timeout_))
       ROS_ERROR("Track timeout no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("eject_sensitivity", eject_sensitivity_))
+    if (!nh.getParam("eject_sensitivity", eject_sensitivity_))//设置弹射的灵敏度，默认为1
       eject_sensitivity_ = 1.;
   }
   ~GimbalCommandSender() = default;
-  void setRate(double scale_yaw, double scale_pitch)
+  void setRate(double scale_yaw, double scale_pitch)//设置yaw角和pitch角
   {
     if (std::abs(scale_yaw) > 1)
       scale_yaw = scale_yaw > 0 ? 1 : -1;
@@ -348,11 +348,11 @@ private:
 class ShooterCommandSender : public TimeStampCommandSenderBase<rm_msgs::ShootCmd>
 {
 public:
-  explicit ShooterCommandSender(ros::NodeHandle& nh) : TimeStampCommandSenderBase<rm_msgs::ShootCmd>(nh)
+  explicit ShooterCommandSender(ros::NodeHandle& nh) : TimeStampCommandSenderBase<rm_msgs::ShootCmd>(nh)//射击速度命令
   {
     ros::NodeHandle limit_nh(nh, "heat_limit");
-    heat_limit_ = new HeatLimit(limit_nh);
-    nh.param("speed_10m_per_speed", speed_10_, 10.);
+    heat_limit_ = new HeatLimit(limit_nh);//热量限制节点
+    nh.param("speed_10m_per_speed", speed_10_, 10.);//获取弹速需要的参数
     nh.param("speed_15m_per_speed", speed_15_, 15.);
     nh.param("speed_16m_per_speed", speed_16_, 16.);
     nh.param("speed_18m_per_speed", speed_18_, 18.);

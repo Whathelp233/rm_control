@@ -50,27 +50,27 @@ class ControllerManager
 public:
   explicit ControllerManager(ros::NodeHandle& nh)
     : load_client_(nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller"))
-    , switch_caller_(nh)
+    , switch_caller_(nh)//读取控制器
   {
-    if (!nh.hasParam("controllers_list"))
+    if (!nh.hasParam("controllers_list"))//判断是否有控制器列表
       ROS_ERROR("No controllers defined");
     ROS_INFO("Waiting for load_controller service...");
     load_client_.waitForExistence();
     ros::NodeHandle nh_list(nh, "controllers_list");
     XmlRpc::XmlRpcValue controllers;
-    if (nh_list.getParam("state_controllers", controllers))
+    if (nh_list.getParam("state_controllers", controllers))//加载状态控制器（例如joint_state）
       for (int i = 0; i < controllers.size(); ++i)
       {
         state_controllers_.push_back(controllers[i]);
         loadController(controllers[i]);
       }
-    if (nh_list.getParam("main_controllers", controllers))
+    if (nh_list.getParam("main_controllers", controllers))//读取主要控制器
       for (int i = 0; i < controllers.size(); ++i)
       {
-        main_controllers_.push_back(controllers[i]);
+        main_controllers_.push_back(controllers[i]);//塞进主要控制器列表中
         loadController(controllers[i]);
       }
-    if (nh_list.getParam("calibration_controllers", controllers))
+    if (nh_list.getParam("calibration_controllers", controllers))//读取校准控制器
       for (int i = 0; i < controllers.size(); ++i)
       {
         calibration_controllers_.push_back(controllers[i]);
@@ -79,73 +79,71 @@ public:
   }
   void update()
   {
-    if (!switch_caller_.isCalling())
+    if (!switch_caller_.isCalling())//如果没有在调用服务
     {
-      switch_caller_.startControllers(start_buffer_);
-      switch_caller_.stopControllers(stop_buffer_);
-      if (!start_buffer_.empty() || !stop_buffer_.empty())
+      switch_caller_.startControllers(start_buffer_);//打开在start缓冲区内的控制器
+      switch_caller_.stopControllers(stop_buffer_);//关闭在stop缓冲区内的控制器（本质上就是两个东西都执行一次）
+      if (!start_buffer_.empty() || !stop_buffer_.empty())//如果有任何一个不为空，就调用服务
       {
-        switch_caller_.callService();
-        start_buffer_.clear();
+        switch_caller_.callService();//占用线程
+        start_buffer_.clear();//清空两个缓冲区
         stop_buffer_.clear();
       }
     }
   }
   void loadController(const std::string& controller)
   {
-    controller_manager_msgs::LoadController load_controller;
-    load_controller.request.name = controller;
-    load_client_.call(load_controller);
-    if (load_controller.response.ok)
-      ROS_INFO("Loaded %s", controller.c_str());
+    controller_manager_msgs::LoadController load_controller;//定义一个加载控制器的服务
+    load_controller.request.name = controller;//把要加载的控制器的名字赋值给服务的头
+    load_client_.call(load_controller);//调用服务
+    if (load_controller.response.ok)//如果成功加载控制器
+      ROS_INFO("Loaded %s", controller.c_str());//输出加载控制器的信息
     else
       ROS_ERROR("Fail to load %s", controller.c_str());
   }
   void startController(const std::string& controller)
   {
     if (std::find(start_buffer_.begin(), start_buffer_.end(), controller) == start_buffer_.end())
-      start_buffer_.push_back(controller);
-    // AVoid setting controller to start and stop in the same time
+      start_buffer_.push_back(controller);//如果没有在start_buffer_中，就把控制器名添加到start_buffer_中（这个find还得研究一下）
     auto item = std::find(stop_buffer_.begin(), stop_buffer_.end(), controller);
-    if (item != stop_buffer_.end())
-      stop_buffer_.erase(item);
+    if (item != stop_buffer_.end())//如果头尾不结合？
+      stop_buffer_.erase(item);//如果在stop_buffer_中，就把控制器名从stop_buffer_中删除
   }
   void stopController(const std::string& controller)
   {
     if (std::find(stop_buffer_.begin(), stop_buffer_.end(), controller) == stop_buffer_.end())
-      stop_buffer_.push_back(controller);
-    // AVoid setting controller to start and stop in the same time
+      stop_buffer_.push_back(controller);//如果没有在stop_buffer_中，就把控制器名添加到stop_buffer_中
     auto item = std::find(start_buffer_.begin(), start_buffer_.end(), controller);
-    if (item != start_buffer_.end())
+    if (item != start_buffer_.end())//如果controller在start_buffer_中了，就把controller从start_buffer_中删除
       start_buffer_.erase(item);
   }
   void startControllers(const std::vector<std::string>& controllers)
   {
-    for (const auto& controller : controllers)
+    for (const auto& controller : controllers)//；遍历
       startController(controller);
   }
   void stopControllers(const std::vector<std::string>& controllers)
   {
-    for (const auto& controller : controllers)
+    for (const auto& controller : controllers)//遍历所有的控制器;
       stopController(controller);
   }
-  void startStateControllers()
+  void startStateControllers()//开启状态控制器（例如关节控制器）
   {
     startControllers(state_controllers_);
   }
-  void startMainControllers()
+  void startMainControllers()//启动主要控制器
   {
     startControllers(main_controllers_);
   }
   void stopMainControllers()
   {
-    stopControllers(main_controllers_);
+    stopControllers(main_controllers_); //停掉主要控制器;
   }
   void startCalibrationControllers()
   {
     startControllers(calibration_controllers_);
   }
-  void stopCalibrationControllers()
+  void stopCalibrationControllers()//关闭校准控制器
   {
     stopControllers(calibration_controllers_);
   }

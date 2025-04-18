@@ -52,41 +52,41 @@ public:
   PowerLimit(ros::NodeHandle& nh)
 
   {
-    if (!nh.getParam("safety_power", safety_power_))
+    if (!nh.getParam("safety_power", safety_power_))//获取安全频率
       ROS_ERROR("Safety power no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("capacitor_threshold", capacitor_threshold_))
+    if (!nh.getParam("capacitor_threshold", capacitor_threshold_))//超电阈值
       ROS_ERROR("Capacitor threshold no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("charge_power", charge_power_))
+    if (!nh.getParam("charge_power", charge_power_))//充能功率
       ROS_ERROR("Charge power no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("extra_power", extra_power_))
+    if (!nh.getParam("extra_power", extra_power_))//额外功率
       ROS_ERROR("Extra power no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("burst_power", burst_power_))
+    if (!nh.getParam("burst_power", burst_power_))//超电功率
       ROS_ERROR("Burst power no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("power_gain", power_gain_))
+    if (!nh.getParam("power_gain", power_gain_))//功率增益
       ROS_ERROR("power gain no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("buffer_threshold", buffer_threshold_))
+    if (!nh.getParam("buffer_threshold", buffer_threshold_))//缓冲增益？
       ROS_ERROR("buffer threshold no defined (namespace: %s)", nh.getNamespace().c_str());
-    if (!nh.getParam("is_new_capacitor", is_new_capacitor_))
+    if (!nh.getParam("is_new_capacitor", is_new_capacitor_))//新超电（400w那个）
       ROS_ERROR("is_new_capacitor no defined (namespace: %s)", nh.getNamespace().c_str());
   }
   typedef enum
   {
-    CHARGE = 0,
-    BURST = 1,
-    NORMAL = 2,
+    CHARGE = 0,//充能
+    BURST = 1,//超电
+    NORMAL = 2,//正常
     ALLOFF = 3,
-    TEST = 4,
+    TEST = 4,//测试
   } Mode;
 
   void updateSafetyPower(int safety_power)
   {
-    if (safety_power > 0)
+    if (safety_power > 0)//确定没断电
       safety_power_ = safety_power;
     ROS_INFO("update safety power: %d", safety_power);
   }
   void updateState(uint8_t state)
   {
-    if (!capacitor_is_on_)
+    if (!capacitor_is_on_)//没开超电
       expect_state_ = ALLOFF;
     else
       expect_state_ = state;
@@ -119,9 +119,9 @@ public:
   {
     return expect_state_;
   }
-  void setLimitPower(rm_msgs::ChassisCmd& chassis_cmd, bool is_gyro)
+  void setLimitPower(rm_msgs::ChassisCmd& chassis_cmd, bool is_gyro)//设置功率上限
   {
-    if (robot_id_ == rm_msgs::GameRobotStatus::BLUE_ENGINEER || robot_id_ == rm_msgs::GameRobotStatus::RED_ENGINEER)
+    if (robot_id_ == rm_msgs::GameRobotStatus::BLUE_ENGINEER || robot_id_ == rm_msgs::GameRobotStatus::RED_ENGINEER)//如果是工程是直接跑满的
       chassis_cmd.power_limit = 400;
     else
     {  // standard and hero

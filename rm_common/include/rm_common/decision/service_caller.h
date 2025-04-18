@@ -88,7 +88,7 @@ public:
   {
     delete thread_;
   }
-  void callService()
+  void callService()//用于调用服务占用线程
   {
     if (isCalling())
       return;
@@ -99,7 +99,7 @@ public:
   {
     return service_;
   }
-  bool isCalling()
+  bool isCalling()//用来判断当前服务是否在调用（占用？）
   {
     std::unique_lock<std::mutex> guard(mutex_, std::try_to_lock);
     return !guard.owns_lock();
