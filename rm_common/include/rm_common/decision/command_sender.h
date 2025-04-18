@@ -74,7 +74,7 @@ template <class MsgType>
 class CommandSenderBase
 {
 public:
-  explicit CommandSenderBase(ros::NodeHandle& nh)
+  explicit CommandSenderBase(ros::NodeHandle& nh)//命令基类
   {
     if (!nh.getParam("topic", topic_))
       ROS_ERROR("Topic name no defined (namespace: %s)", nh.getNamespace().c_str());
@@ -116,7 +116,7 @@ protected:
 };
 
 template <class MsgType>
-class TimeStampCommandSenderBase : public CommandSenderBase<MsgType>
+class TimeStampCommandSenderBase : public CommandSenderBase<MsgType>//时间戳命令
 {
 public:
   explicit TimeStampCommandSenderBase(ros::NodeHandle& nh) : CommandSenderBase<MsgType>(nh)
@@ -143,7 +143,7 @@ public:
   }
 };
 
-class Vel2DCommandSender : public CommandSenderBase<geometry_msgs::Twist>
+class Vel2DCommandSender : public CommandSenderBase<geometry_msgs::Twist>//平面速度命令发送
 {
 public:
   explicit Vel2DCommandSender(ros::NodeHandle& nh) : CommandSenderBase<geometry_msgs::Twist>(nh)
@@ -278,13 +278,13 @@ public:
     TimeStampCommandSenderBase<rm_msgs::ChassisCmd>::sendCommand(time);
   }
   void setZero() override{};
-  PowerLimit* power_limit_;
+  PowerLimit* power_limit_;//功率限制
 
 private:
   LinearInterp accel_x_, accel_y_, accel_z_;
 };
 
-class GimbalCommandSender : public TimeStampCommandSenderBase<rm_msgs::GimbalCmd>
+class GimbalCommandSender : public TimeStampCommandSenderBase<rm_msgs::GimbalCmd>//云台命令
 {
 public:
   explicit GimbalCommandSender(ros::NodeHandle& nh) : TimeStampCommandSenderBase<rm_msgs::GimbalCmd>(nh)

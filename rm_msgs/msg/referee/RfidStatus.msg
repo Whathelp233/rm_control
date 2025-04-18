@@ -23,5 +23,6 @@ bool own_large_resource_island_point
 bool enemy_large_resource_island_point
 bool own_exchange_zone
 bool central_buff_point
-
+bool own_side_restoration_zone
+bool own_sentry_patrol_zones
 time stamp
