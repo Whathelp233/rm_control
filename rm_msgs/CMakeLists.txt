@@ -112,7 +112,9 @@ add_message_files(
         RadarWirelessEnemyRobotBuff.msg
         RadarWirelessEnemyRobotHp.msg
         RadarWirelessEnemyRobotPos.msg
+        RobotCustomData.msg
         RobotCustomData2.msg
+        CustomClientCmdData.msg
         VisualizeStateData.msg
         PowerManagementSampleAndStatusData.msg
         PowerManagementInitializationExceptionData.msg

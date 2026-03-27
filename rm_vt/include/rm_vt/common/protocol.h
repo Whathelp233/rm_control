@@ -10,8 +10,10 @@ namespace rm_vt
 typedef enum
 {
   CUSTOM_CONTROLLER_CMD = 0x0302,  // custom_controller
-  ROBOT_COMMAND_CMD = 0x0304,      // keyboard_data
-  ROBOT_TO_CUSTOM_CMD = 0x0309
+  KEYBOARD_MOUSE_CMD = 0x0306,     // custom client keyboard/mouse data
+  ROBOT_TO_CUSTOM_CMD = 0x0309,    // robot -> custom controller
+  ROBOT_TO_CUSTOM_CMD_2 = 0x0310,  // robot -> custom client
+  CUSTOM_TO_ROBOT_CMD = 0x0311     // custom client -> robot
 } VideoTransmissionCmdId;
 
 typedef struct
@@ -57,29 +59,23 @@ typedef struct
 
 typedef struct
 {
-  int16_t mouse_x;
-  int16_t mouse_y;
-  int16_t mouse_z;
-  int8_t left_button_down;
-  int8_t right_button_down;
-  uint16_t key_w : 1;
-  uint16_t key_s : 1;
-  uint16_t key_a : 1;
-  uint16_t key_d : 1;
-  uint16_t key_shift : 1;
-  uint16_t key_ctrl : 1;
-  uint16_t key_q : 1;
-  uint16_t key_e : 1;
-  uint16_t key_r : 1;
-  uint16_t key_f : 1;
-  uint16_t key_g : 1;
-  uint16_t key_z : 1;
-  uint16_t key_x : 1;
-  uint16_t key_c : 1;
-  uint16_t key_v : 1;
-  uint16_t key_b : 1;
+  uint16_t key_value;
+  uint16_t x_position : 12;
+  uint16_t mouse_left : 4;
+  uint16_t y_position : 12;
+  uint16_t mouse_right : 4;
   uint16_t reserved;
 } __packed KeyboardMouseData;
+
+typedef struct
+{
+  uint8_t data[300];
+} __packed RobotToCustomData2;
+
+typedef struct
+{
+  uint8_t data[30];
+} __packed CustomToRobotData;
 
 typedef struct
 {

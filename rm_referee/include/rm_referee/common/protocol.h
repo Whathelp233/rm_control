@@ -79,6 +79,12 @@ typedef enum
   ROBOT_TO_CUSTOM_CONTROLLER_CMD = 0x0309,
   ROBOT_TO_CUSTOM_CLIENT_CMD = 0x0310,
   CUSTOM_CLIENT_TO_ROBOT_CMD = 0x0311,
+  RADAR_WIRELESS_ENEMY_ROBOT_POS_CMD = 0x0A01,
+  RADAR_WIRELESS_ENEMY_ROBOT_HP_CMD = 0x0A02,
+  RADAR_WIRELESS_ENEMY_PROJECTILE_ALLOWANCE_CMD = 0x0A03,
+  RADAR_WIRELESS_ENEMY_COIN_AND_FIELD_STATUS_CMD = 0x0A04,
+  RADAR_WIRELESS_ENEMY_ROBOT_BUFF_CMD = 0x0A05,
+  RADAR_WIRELESS_ENEMY_CALL_SIGN_CMD = 0x0A06,
   CUSTOM_TO_ROBOT_CMD = CUSTOM_INFO_CMD,                 // legacy misnomer alias kept for compatibility
   ROBOT_TO_CUSTOM_CMD = ROBOT_TO_CUSTOM_CONTROLLER_CMD,  // legacy alias
   ROBOT_TO_CUSTOM_CMD_2 = ROBOT_TO_CUSTOM_CLIENT_CMD,    // legacy alias
@@ -283,17 +289,20 @@ typedef struct
 
 typedef struct
 {
-  uint8_t nan_overlapping_supply_station_state : 1;
-  uint8_t overlapping_supply_station_state : 1;
-  uint8_t supplier_zone_state : 1;
-  uint8_t small_power_rune_state : 1;
-  uint8_t large_power_rune_state : 1;
-  uint8_t central_elevated_ground_state : 2;
-  uint8_t trapezoidal_elevated_ground_state : 2;
-  uint16_t be_hit_time : 9;
-  uint8_t be_hit_target : 3;
-  uint8_t central_point_state : 2;
-  uint16_t reserved : 9;
+  uint32_t nan_overlapping_supply_station_state : 1;
+  uint32_t overlapping_supply_station_state : 1;
+  uint32_t supplier_zone_state : 1;
+  uint32_t small_power_rune_state : 2;
+  uint32_t large_power_rune_state : 2;
+  uint32_t central_elevated_ground_state : 2;
+  uint32_t trapezoidal_elevated_ground_state : 2;
+  uint32_t be_hit_time : 9;
+  uint32_t be_hit_target : 3;
+  uint32_t central_point_state : 2;
+  uint32_t own_fort_buff_point_state : 2;
+  uint32_t own_outpost_buff_point_state : 2;
+  uint32_t own_base_buff_point_state : 1;
+  uint32_t reserved : 2;
 } __packed EventData;
 
 typedef struct
@@ -314,10 +323,10 @@ typedef struct
 typedef struct
 {
   uint8_t dart_remaining_time;
-  uint8_t dart_last_aim_state : 3;
-  uint8_t enemy_total_hit_received : 3;
-  uint8_t dart_current_target : 2;
-  uint8_t reserved;
+  uint16_t dart_last_aim_state : 3;
+  uint16_t enemy_total_hit_received : 3;
+  uint16_t dart_current_target : 3;
+  uint16_t reserved : 7;
 } __packed DartInfo;
 
 typedef struct
@@ -633,19 +642,33 @@ typedef struct
 
 typedef struct
 {
-  uint16_t hero_position_x;
-  uint16_t hero_position_y;
-  uint16_t engineer_position_x;
-  uint16_t engineer_position_y;
-  uint16_t infantry_3_position_x;
-  uint16_t infantry_3_position_y;
-  uint16_t infantry_4_position_x;
-  uint16_t infantry_4_position_y;
-  uint16_t reserved_1;
-  uint16_t reserved_2;
-  uint16_t sentry_position_x;
-  uint16_t sentry_position_y;
+  uint16_t opponent_hero_position_x;
+  uint16_t opponent_hero_position_y;
+  uint16_t opponent_engineer_position_x;
+  uint16_t opponent_engineer_position_y;
+  uint16_t opponent_infantry_3_position_x;
+  uint16_t opponent_infantry_3_position_y;
+  uint16_t opponent_infantry_4_position_x;
+  uint16_t opponent_infantry_4_position_y;
+  uint16_t opponent_aerial_position_x;
+  uint16_t opponent_aerial_position_y;
+  uint16_t opponent_sentry_position_x;
+  uint16_t opponent_sentry_position_y;
+  uint16_t ally_hero_position_x;
+  uint16_t ally_hero_position_y;
+  uint16_t ally_engineer_position_x;
+  uint16_t ally_engineer_position_y;
+  uint16_t ally_infantry_3_position_x;
+  uint16_t ally_infantry_3_position_y;
+  uint16_t ally_infantry_4_position_x;
+  uint16_t ally_infantry_4_position_y;
+  uint16_t ally_aerial_position_x;
+  uint16_t ally_aerial_position_y;
+  uint16_t ally_sentry_position_x;
+  uint16_t ally_sentry_position_y;
 } __packed ClientMapReceiveData;
+
+static_assert(sizeof(ClientMapReceiveData) == 48, "ClientMapReceiveData must be 48 bytes");
 
 typedef struct
 {
@@ -684,6 +707,83 @@ typedef struct
   int8_t delta_y[49];
   uint16_t sender_id;
 } __packed MapSentryData;
+
+typedef struct
+{
+  uint16_t hero_position_x;
+  uint16_t hero_position_y;
+  uint16_t engineer_position_x;
+  uint16_t engineer_position_y;
+  uint16_t infantry_3_position_x;
+  uint16_t infantry_3_position_y;
+  uint16_t infantry_4_position_x;
+  uint16_t infantry_4_position_y;
+  uint16_t aerial_position_x;
+  uint16_t aerial_position_y;
+  uint16_t sentry_position_x;
+  uint16_t sentry_position_y;
+} __packed RadarWirelessEnemyRobotPos;
+
+typedef struct
+{
+  uint16_t hero_hp;
+  uint16_t engineer_hp;
+  uint16_t infantry_3_hp;
+  uint16_t infantry_4_hp;
+  uint16_t reserved;
+  uint16_t sentry_hp;
+} __packed RadarWirelessEnemyRobotHp;
+
+typedef struct
+{
+  uint16_t hero_projectile_allowance;
+  uint16_t infantry_3_projectile_allowance;
+  uint16_t infantry_4_projectile_allowance;
+  uint16_t aerial_projectile_allowance;
+  uint16_t sentry_projectile_allowance;
+} __packed RadarWirelessEnemyProjectileAllowance;
+
+typedef struct
+{
+  uint16_t remaining_coin;
+  uint16_t total_coin;
+  uint32_t field_status;
+} __packed RadarWirelessEnemyCoinAndFieldStatus;
+
+typedef struct
+{
+  uint8_t hero_recovery_buff;
+  uint16_t hero_cooling_buff;
+  uint8_t hero_defense_buff;
+  uint8_t hero_negative_defense_buff;
+  uint16_t hero_attack_buff;
+  uint8_t engineer_recovery_buff;
+  uint16_t engineer_cooling_buff;
+  uint8_t engineer_defense_buff;
+  uint8_t engineer_negative_defense_buff;
+  uint16_t engineer_attack_buff;
+  uint8_t infantry_3_recovery_buff;
+  uint16_t infantry_3_cooling_buff;
+  uint8_t infantry_3_defense_buff;
+  uint8_t infantry_3_negative_defense_buff;
+  uint16_t infantry_3_attack_buff;
+  uint8_t infantry_4_recovery_buff;
+  uint16_t infantry_4_cooling_buff;
+  uint8_t infantry_4_defense_buff;
+  uint8_t infantry_4_negative_defense_buff;
+  uint16_t infantry_4_attack_buff;
+  uint8_t sentry_recovery_buff;
+  uint16_t sentry_cooling_buff;
+  uint8_t sentry_defense_buff;
+  uint8_t sentry_negative_defense_buff;
+  uint16_t sentry_attack_buff;
+  uint8_t sentry_posture;
+} __packed RadarWirelessEnemyRobotBuff;
+
+typedef struct
+{
+  uint8_t ascii_data[6];
+} __packed RadarWirelessEnemyCallSign;
 
 typedef struct
 {
